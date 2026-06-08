@@ -2,8 +2,6 @@
 
 A shareable Pi skill for running skill-only orchestration workflows: clarify the request, decompose work, delegate to subagents/teams, maintain a durable ledger, protect parent context, validate, clean up, and report.
 
-This repo intentionally does **not** include or depend on `orchestrate-ui`.
-
 ## Contents
 
 ```text
