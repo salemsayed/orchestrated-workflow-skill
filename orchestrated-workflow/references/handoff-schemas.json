@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.pi/orchestrated-workflow/handoff-schemas.json",
+  "title": "Orchestrated Workflow Handoff Schemas",
+  "description": "Reusable JSON schemas for structured scout, worker, reviewer, validator, and synthesis handoffs.",
+  "oneOf": [
+    { "$ref": "#/$defs/ScoutHandoff" },
+    { "$ref": "#/$defs/WorkerHandoff" },
+    { "$ref": "#/$defs/ReviewerHandoff" },
+    { "$ref": "#/$defs/ValidatorHandoff" },
+    { "$ref": "#/$defs/SynthesisHandoff" }
+  ],
+  "$defs": {
+    "CommandResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "command": { "type": "string" },
+        "status": { "enum": ["passed", "failed", "skipped", "not_run"] },
+        "exitCode": { "type": ["integer", "null"] },
+        "evidence": { "type": "string" },
+        "logPath": { "type": ["string", "null"] }
+      },
+      "required": ["command", "status", "evidence"]
+    },
+    "FileEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "reason": { "type": "string" },
+        "lines": { "type": ["string", "null"] }
+      },
+      "required": ["path", "reason"]
+    },
+    "Decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decision": { "type": "string" },
+        "rationale": { "type": "string" },
+        "source": { "type": ["string", "null"] }
+      },
+      "required": ["decision", "rationale"]
+    },
+    "Risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "description": { "type": "string" },
+        "mitigation": { "type": ["string", "null"] }
+      },
+      "required": ["severity", "description"]
+    },
+    "Finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["blocker", "high", "medium", "low", "nit"] },
+        "axis": { "enum": ["spec", "standards", "correctness", "validation", "security", "performance", "ui", "other"] },
+        "title": { "type": "string" },
+        "evidence": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "line": { "type": ["integer", "null"] },
+        "recommendation": { "type": "string" },
+        "fixWorthDoingNow": { "type": "boolean" }
+      },
+      "required": ["severity", "axis", "title", "evidence", "recommendation", "fixWorthDoingNow"]
+    },
+    "StageUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string" },
+        "status": { "enum": ["pending", "running", "done", "blocked"] },
+        "owner": { "type": ["string", "null"] },
+        "inputs": { "type": "array", "items": { "type": "string" } },
+        "outputs": { "type": "array", "items": { "type": "string" } },
+        "synthesis": { "type": ["string", "null"] },
+        "stopRule": { "type": ["string", "null"] }
+      },
+      "required": ["label", "status"]
+    },
+    "ActiveHandleDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["task", "process", "subagent", "team", "lane", "other"] },
+        "owner": { "type": ["string", "null"] },
+        "lane": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "lastSeen": { "type": ["string", "null"] },
+        "expectedNextCheck": { "type": ["string", "null"] },
+        "staleIfAfter": { "type": ["string", "null"] },
+        "artifactOrLogPath": { "type": ["string", "null"] },
+        "disposition": { "enum": ["active", "complete", "blocked", "superseded", "intentionally-left-open"] }
+      },
+      "required": ["id", "kind", "status", "disposition"]
+    },
+    "ContextEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactPath": { "type": ["string", "null"] },
+        "logPath": { "type": ["string", "null"] },
+        "quotedLines": { "type": "string" },
+        "omittedBulkyOutput": { "type": "boolean" }
+      },
+      "required": ["quotedLines", "omittedBulkyOutput"]
+    },
+    "SafetyGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": { "type": "string" },
+        "environment": { "type": ["string", "null"] },
+        "approval": { "enum": ["captured", "not_required", "missing"] },
+        "dryRunArtifact": { "type": ["string", "null"] },
+        "backupOrRollback": { "type": ["string", "null"] },
+        "postVerify": { "type": ["string", "null"] },
+        "secretRedaction": { "type": "string" }
+      },
+      "required": ["target", "approval", "secretRedaction"]
+    },
+    "ScoutHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "scout" },
+        "summary": { "type": "string" },
+        "relevantFiles": { "type": "array", "items": { "$ref": "#/$defs/FileEvidence" } },
+        "entryPoints": { "type": "array", "items": { "type": "string" } },
+        "constraints": { "type": "array", "items": { "type": "string" } },
+        "coverage": { "type": "array", "items": { "type": "string" } },
+        "notInspected": { "type": "array", "items": { "type": "string" } },
+        "topFindings": { "type": "array", "items": { "type": "string" } },
+        "resumeFrom": { "type": ["string", "null"] },
+        "partial": { "type": "boolean" },
+        "openQuestions": { "type": "array", "items": { "type": "string" } },
+        "risks": { "type": "array", "items": { "$ref": "#/$defs/Risk" } },
+        "activeHandlesDelta": { "type": "array", "items": { "$ref": "#/$defs/ActiveHandleDelta" } },
+        "contextEvidence": { "$ref": "#/$defs/ContextEvidence" },
+        "stageUpdate": { "$ref": "#/$defs/StageUpdate" }
+      },
+      "required": ["kind", "summary", "relevantFiles", "openQuestions"]
+    },
+    "WorkerHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "worker" },
+        "summary": { "type": "string" },
+        "changedFiles": { "type": "array", "items": { "$ref": "#/$defs/FileEvidence" } },
+        "decisions": { "type": "array", "items": { "$ref": "#/$defs/Decision" } },
+        "validation": { "type": "array", "items": { "$ref": "#/$defs/CommandResult" } },
+        "leftUndone": { "type": "array", "items": { "type": "string" } },
+        "risks": { "type": "array", "items": { "$ref": "#/$defs/Risk" } },
+        "needsParentDecision": { "type": "array", "items": { "type": "string" } },
+        "activeHandlesDelta": { "type": "array", "items": { "$ref": "#/$defs/ActiveHandleDelta" } },
+        "contextEvidence": { "$ref": "#/$defs/ContextEvidence" },
+        "safetyGate": { "$ref": "#/$defs/SafetyGate" },
+        "stageUpdate": { "$ref": "#/$defs/StageUpdate" }
+      },
+      "required": ["kind", "summary", "changedFiles", "validation", "leftUndone", "needsParentDecision"]
+    },
+    "ReviewerHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "reviewer" },
+        "verdict": { "enum": ["pass", "pass_with_notes", "fail"] },
+        "summary": { "type": "string" },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/Finding" } },
+        "coverage": { "type": "array", "items": { "type": "string" } },
+        "notInspected": { "type": "array", "items": { "type": "string" } },
+        "resumeFrom": { "type": ["string", "null"] },
+        "partial": { "type": "boolean" },
+        "standardsChecked": { "type": "array", "items": { "type": "string" } },
+        "specSourcesChecked": { "type": "array", "items": { "type": "string" } },
+        "activeHandlesDelta": { "type": "array", "items": { "$ref": "#/$defs/ActiveHandleDelta" } },
+        "contextEvidence": { "$ref": "#/$defs/ContextEvidence" },
+        "stageUpdate": { "$ref": "#/$defs/StageUpdate" }
+      },
+      "required": ["kind", "verdict", "summary", "findings"]
+    },
+    "ValidatorHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "validator" },
+        "verdict": { "enum": ["pass", "fail", "blocked", "not_run"] },
+        "summary": { "type": "string" },
+        "checks": { "type": "array", "items": { "$ref": "#/$defs/CommandResult" } },
+        "evidencePaths": { "type": "array", "items": { "type": "string" } },
+        "blockers": { "type": "array", "items": { "type": "string" } },
+        "coverage": { "type": "array", "items": { "type": "string" } },
+        "notInspected": { "type": "array", "items": { "type": "string" } },
+        "resumeFrom": { "type": ["string", "null"] },
+        "partial": { "type": "boolean" },
+        "activeHandlesDelta": { "type": "array", "items": { "$ref": "#/$defs/ActiveHandleDelta" } },
+        "contextEvidence": { "$ref": "#/$defs/ContextEvidence" },
+        "safetyGate": { "$ref": "#/$defs/SafetyGate" },
+        "stageUpdate": { "$ref": "#/$defs/StageUpdate" }
+      },
+      "required": ["kind", "verdict", "summary", "checks", "blockers"]
+    },
+    "SynthesisHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "synthesis" },
+        "verdict": { "enum": ["ready", "needs_fixes", "blocked", "defer"] },
+        "summary": { "type": "string" },
+        "acceptedFindings": { "type": "array", "items": { "$ref": "#/$defs/Finding" } },
+        "deferredFindings": { "type": "array", "items": { "$ref": "#/$defs/Finding" } },
+        "nextAction": { "type": "string" },
+        "finalReportDraft": { "type": "string" },
+        "activeHandlesDelta": { "type": "array", "items": { "$ref": "#/$defs/ActiveHandleDelta" } },
+        "contextEvidence": { "$ref": "#/$defs/ContextEvidence" },
+        "safetyGate": { "$ref": "#/$defs/SafetyGate" },
+        "stageUpdates": { "type": "array", "items": { "$ref": "#/$defs/StageUpdate" } }
+      },
+      "required": ["kind", "verdict", "summary", "nextAction", "finalReportDraft"]
+    }
+  }
+}

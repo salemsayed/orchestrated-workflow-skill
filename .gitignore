@@ -1,0 +1,9 @@
+# OS/editor noise
+.DS_Store
+*.swp
+*.tmp
+
+# Local orchestration/run artifacts
+.pi/
+orchestration-state.md
+*.log
